@@ -1,57 +1,38 @@
-
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, BarChart2, Home, Info } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Link, NavLink } from 'react-router-dom';
 
-const NavBar: React.FC = () => {
-  const location = useLocation();
-  const isDetailPage = location.pathname.includes('/sipp/');
+// The masthead: the wordmark, the "Illustrative" flag (on every page, since every
+// score here is illustrative), and two links. One hairline under it.
 
-  return (
-    <motion.header
-      initial={{ y: -20, opacity: 0 }}
-      animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.4 }}
-      className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b pb-2"
-    >
-      <div className="container px-4 py-4 mx-auto">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <BarChart2 className="h-6 w-6 text-primary" />
-            <span className="font-medium text-lg hidden sm:inline-block">Pundit Accuracy Tracker</span>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            {isDetailPage ? (
-              <Button variant="ghost" size="sm" asChild>
-                <Link to="/" className="flex items-center">
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  <span>Back to Dashboard</span>
-                </Link>
-              </Button>
-            ) : (
-              <>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/" className="flex items-center">
-                    <Home className="mr-2 h-4 w-4" />
-                    <span className="hidden sm:inline-block">Home</span>
-                  </Link>
-                </Button>
-                <Button variant="ghost" size="sm" asChild>
-                  <Link to="/about" className="flex items-center">
-                    <Info className="mr-2 h-4 w-4" />
-                    <span className="hidden sm:inline-block">About</span>
-                  </Link>
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
+const LINKS = [
+  { to: '/', label: 'Leaderboard', end: true },
+  { to: '/about', label: 'About', end: false },
+];
+
+const NavBar: React.FC = () => (
+  <header className="border-b">
+    <div className="shell flex flex-wrap items-center justify-between gap-x-8 gap-y-2 py-4 sm:py-5">
+      <div className="flex min-w-0 flex-wrap items-center gap-x-4 gap-y-2">
+        <Link to="/" className="t-name text-[24px] text-foreground no-underline sm:text-[27px]">
+          Pundit Accuracy Tracker
+        </Link>
+        <Link to="/about#data" className="flag" title="The data is synthetic. How this works.">
+          Illustrative
+        </Link>
       </div>
-    </motion.header>
-  );
-};
+      <nav aria-label="Main">
+        <ul className="flex items-center gap-6">
+          {LINKS.map((l) => (
+            <li key={l.to}>
+              <NavLink to={l.to} end={l.end} className="nav-link">
+                {l.label}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    </div>
+  </header>
+);
 
 export default NavBar;

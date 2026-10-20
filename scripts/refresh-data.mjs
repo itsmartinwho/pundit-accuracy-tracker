@@ -18,24 +18,24 @@ import OpenAI from 'openai';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_OUT = path.join(ROOT, 'public/data/sippData.json');
 
-// Current as of OpenAI's docs on 2026-10-20: a model that supports the Responses
-// API and its web_search tool. Override with OPENAI_MODEL, e.g. gpt-6-luna to spend less.
-const MODEL = process.env.OPENAI_MODEL || 'gpt-6.1-sol';
+// OpenAI's most capable model as of its models page on 2026-10-20; it supports the
+// Responses API and its web_search tool. Override with OPENAI_MODEL, e.g. gpt-6-luna to spend less.
+const MODEL = process.env.OPENAI_MODEL || 'gpt-6-astra';
 const SINCE = '2023-01-01';
 const MIN_VERIFIED = 3;
 const CATEGORIES = ['economy', 'politics', 'technology', 'foreign-policy', 'social-trends'];
 
 const PUNDITS = [
-  { id: 'tucker-carlson', name: 'Tucker Carlson', shortBio: 'Conservative political commentator, former Fox News host', photoUrl: '/lovable-uploads/dc4415b9-f384-4c81-b95d-952a1c7c3849.png' },
-  { id: 'rachel-maddow', name: 'Rachel Maddow', shortBio: 'Progressive political commentator, MSNBC host', photoUrl: '/lovable-uploads/c844125c-dc7e-4e4d-878c-8c237999c9b5.png' },
-  { id: 'elon-musk', name: 'Elon Musk', shortBio: 'Tech entrepreneur, owner of X/Twitter', photoUrl: '/lovable-uploads/0d2c9e34-5b94-48a2-a7ff-e928ed7818ac.png' },
-  { id: 'nate-silver', name: 'Nate Silver', shortBio: 'Data journalist, founder of FiveThirtyEight', photoUrl: '/lovable-uploads/e9915d12-f691-4ce5-912c-330023f9a16b.png' },
-  { id: 'sean-hannity', name: 'Sean Hannity', shortBio: 'Conservative political commentator, Fox News host', photoUrl: '/lovable-uploads/e08e1c1f-75ae-4e63-8e39-1031441d6435.png' },
-  { id: 'anderson-cooper', name: 'Anderson Cooper', shortBio: 'CNN anchor and correspondent', photoUrl: '/lovable-uploads/a1a3d886-769a-4116-84b0-27a1cbbeb947.png' },
-  { id: 'ben-shapiro', name: 'Ben Shapiro', shortBio: 'Conservative political commentator, founder of The Daily Wire', photoUrl: '/lovable-uploads/142a495e-df1d-48b0-b7b3-85d6a049d420.png' },
-  { id: 'ezra-klein', name: 'Ezra Klein', shortBio: 'Liberal political analyst, co-founder of Vox', photoUrl: '/lovable-uploads/928cfe89-be28-4b21-b62d-84037e1c20f9.png' },
-  { id: 'joe-rogan', name: 'Joe Rogan', shortBio: 'Podcast host with wide-ranging political discussions', photoUrl: '/lovable-uploads/aad243bb-10d6-4507-ba12-3c3feb720071.png' },
-  { id: 'krystal-ball', name: 'Krystal Ball', shortBio: 'Progressive political commentator, co-host of Breaking Points', photoUrl: '/lovable-uploads/29d1d72f-3504-4b6c-9e6b-aecc18ce59b0.png' },
+  { id: 'tucker-carlson', name: 'Tucker Carlson', shortBio: 'Conservative political commentator, former Fox News host', photoUrl: '/portraits/dc4415b9-f384-4c81-b95d-952a1c7c3849.png' },
+  { id: 'rachel-maddow', name: 'Rachel Maddow', shortBio: 'Progressive political commentator, MSNBC host', photoUrl: '/portraits/c844125c-dc7e-4e4d-878c-8c237999c9b5.png' },
+  { id: 'elon-musk', name: 'Elon Musk', shortBio: 'Tech entrepreneur, owner of X/Twitter', photoUrl: '/portraits/0d2c9e34-5b94-48a2-a7ff-e928ed7818ac.png' },
+  { id: 'nate-silver', name: 'Nate Silver', shortBio: 'Data journalist, founder of FiveThirtyEight', photoUrl: '/portraits/e9915d12-f691-4ce5-912c-330023f9a16b.png' },
+  { id: 'sean-hannity', name: 'Sean Hannity', shortBio: 'Conservative political commentator, Fox News host', photoUrl: '/portraits/e08e1c1f-75ae-4e63-8e39-1031441d6435.png' },
+  { id: 'anderson-cooper', name: 'Anderson Cooper', shortBio: 'CNN anchor and correspondent', photoUrl: '/portraits/a1a3d886-769a-4116-84b0-27a1cbbeb947.png' },
+  { id: 'ben-shapiro', name: 'Ben Shapiro', shortBio: 'Conservative political commentator, founder of The Daily Wire', photoUrl: '/portraits/142a495e-df1d-48b0-b7b3-85d6a049d420.png' },
+  { id: 'ezra-klein', name: 'Ezra Klein', shortBio: 'Liberal political analyst, co-founder of Vox', photoUrl: '/portraits/928cfe89-be28-4b21-b62d-84037e1c20f9.png' },
+  { id: 'joe-rogan', name: 'Joe Rogan', shortBio: 'Podcast host with wide-ranging political discussions', photoUrl: '/portraits/aad243bb-10d6-4507-ba12-3c3feb720071.png' },
+  { id: 'krystal-ball', name: 'Krystal Ball', shortBio: 'Progressive political commentator, co-host of Breaking Points', photoUrl: '/portraits/29d1d72f-3504-4b6c-9e6b-aecc18ce59b0.png' },
 ];
 
 const HELP = `Usage: npm run refresh-data -- [options]

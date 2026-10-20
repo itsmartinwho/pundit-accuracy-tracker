@@ -1,145 +1,219 @@
 import React from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { formatNumber, getAccuracyColor } from '@/data/sippData';
+import { useParams } from 'react-router-dom';
 import { useSippDataset } from '@/data/loadSipps';
-import NavBar from '@/components/NavBar';
+import { calculateSippAccuracy } from '@/data/predictionAnalysis';
+import type { SIPP } from '@/data/sippData';
+import PageShell, { Meta } from '@/components/PageShell';
 import DataNotice from '@/components/DataNotice';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import PredictionItem from '@/components/PredictionItem';
-import PredictionAnalysisPanel from '@/components/PredictionAnalysisPanel';
-import { Loader2 } from 'lucide-react';
-import { getFallbackImageUrl } from '@/lib/utils';
+import Portrait from '@/components/Portrait';
+import RatingStrip, { StripAxis } from '@/components/RatingStrip';
+import { OpenPrediction, RatedPrediction } from '@/components/PredictionItem';
+import {
+  CATEGORIES,
+  bandOf,
+  categoryKey,
+  describeRatings,
+  fmtScore,
+  openIn,
+  ordinal,
+  plural,
+  ratedIn,
+} from '@/lib/record';
+
+// A pundit's page: who, the average and every rating behind it, the averages by
+// category, then the record (rated, newest first), the pending, and the patterns.
+
+const SectionHead: React.FC<{ id: string; title: string; meta?: React.ReactNode }> = ({ id, title, meta }) => (
+  <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 border-b border-foreground pb-3">
+    <h2 id={id} className="t-name m-0 text-[34px] sm:text-[40px]">
+      {title}
+    </h2>
+    {meta && <p className="t-label m-0">{meta}</p>}
+  </div>
+);
+
+const rankOf = (sipp: SIPP, all: SIPP[]) => 1 + all.filter((s) => s.averageAccuracy > sipp.averageAccuracy).length;
 
 const SippDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
   const { data, isLoading } = useSippDataset();
-  const sipp = data?.sipps.find(s => s.id === id) ?? null;
+  const sipp = data?.sipps.find((s) => s.id === id) ?? null;
 
-  // Show loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background">
-        <NavBar />
-        <div className="flex flex-col items-center justify-center py-24">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-          <h3 className="text-lg font-medium">Loading SIPP data...</h3>
-        </div>
-      </div>
+      <PageShell>
+        <p className="t-label py-24" role="status">
+          Loading the record…
+        </p>
+      </PageShell>
     );
   }
-  
-  // Show not found state
-  if (!sipp) {
+
+  if (!data || !sipp) {
     return (
-      <div className="min-h-screen bg-background">
-        <NavBar />
-        <div className="container mx-auto px-4 py-16 text-center">
-          <h1 className="text-3xl font-bold">SIPP Not Found</h1>
-          <p className="mt-4 text-muted-foreground">The personality you're looking for doesn't exist or has been removed.</p>
-          <button 
-            onClick={() => navigate('/')}
-            className="mt-8 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-          >
-            Return to Dashboard
-          </button>
+      <PageShell title="Not found">
+        <div className="py-20 sm:py-28">
+          <p className="t-label m-0">No such pundit</p>
+          <h1 className="t-name m-0 mt-4 text-[52px] sm:text-[76px]">Nobody by that name</h1>
+          <p className="m-0 mt-4 max-w-[34em] text-[19px] text-ink-soft">
+            There is no one filed under “{id}”. The ten on the leaderboard are the only pundits here.
+          </p>
         </div>
-      </div>
+      </PageShell>
     );
   }
-  
-  const categoryChartData = [
-    { category: 'Economy', value: sipp.categoryAccuracy.economy },
-    { category: 'Politics', value: sipp.categoryAccuracy.politics },
-    { category: 'Technology', value: sipp.categoryAccuracy.technology },
-    { category: 'Foreign Policy', value: sipp.categoryAccuracy.foreign_policy },
-    { category: 'Social Trends', value: sipp.categoryAccuracy.social_trends }
-  ];
-  
-  // Sort predictions by date (newest first)
-  const sortedPredictions = [...sipp.predictions].sort(
-    (a, b) => new Date(b.dateStated).getTime() - new Date(a.dateStated).getTime()
-  );
-  
+
+  const rated = ratedIn(sipp).sort((a, b) => b.dateStated.localeCompare(a.dateStated));
+  const open = openIn(sipp).sort((a, b) => b.dateStated.localeCompare(a.dateStated));
+  const ratings = rated.map((p) => p.accuracyRating);
+  const average = sipp.averageAccuracy;
+  const { patterns, strongestCategory, weakestCategory } = calculateSippAccuracy(sipp.predictions);
+  const rank = rankOf(sipp, data.sipps);
+  const synthetic = data.meta.kind === 'synthetic';
+  const analysis = sipp.patternAnalysis?.split(/\n\s*\n/).filter((p) => p.trim()) ?? [];
+
   return (
-    <div className="min-h-screen bg-background">
-      <NavBar />
-      
-      <motion.main
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="container mx-auto px-4 py-8"
-      >
-        <div className="flex flex-col items-center">
-          <div className="w-32 h-32 overflow-hidden rounded-full mb-4">
-            <img 
-              src={sipp?.photoUrl} 
-              alt={sipp?.name} 
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.onerror = null; // Prevent infinite loops
-                console.log(`Image load error for ${sipp?.name} in detail view, using fallback`);
-                target.src = getFallbackImageUrl(sipp?.name || "", 128);
-              }} 
+    <PageShell title={sipp.name}>
+      {/* Who, and the average with every rating behind it. */}
+      <header className="grid gap-x-16 gap-y-10 pb-10 pt-8 sm:pt-12 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,27rem)] lg:items-end lg:pb-12">
+        <div className="min-w-0">
+          <Portrait name={sipp.name} src={sipp.photoUrl} size={80} className="sm:size-[92px]" />
+          <h1 className="t-name m-0 mt-5 text-[54px] sm:text-[80px] lg:text-[96px]">{sipp.name}</h1>
+          <p className="m-0 mt-4 max-w-[30em] text-[19px] italic leading-snug text-ink-soft sm:text-[21px]">
+            {sipp.shortBio}
+          </p>
+          <p className="t-label m-0 mt-4">
+            <Meta
+              parts={[
+                plural(sipp.predictions.length, 'prediction'),
+                `${rated.length} rated`,
+                `${open.length} pending`,
+                `${ordinal(rank)} of ${data.sipps.length}`,
+              ]}
             />
-          </div>
-          <h1 className="text-4xl font-bold mb-2">{sipp?.name}</h1>
-          <p className="text-muted-foreground mb-4">{sipp?.shortBio}</p>
-          {sipp && (
-            <Badge style={{ backgroundColor: `hsl(var(--${getAccuracyColor(sipp.averageAccuracy)}))` }}>
-              Overall Accuracy: {formatNumber(sipp.averageAccuracy)}
-            </Badge>
-          )}
+          </p>
         </div>
 
-        {data && <DataNotice meta={data.meta} className="mt-6" />}
-        
-        {sipp && (
-          <Tabs defaultValue="predictions" className="mt-8">
-            <TabsList>
-              <TabsTrigger value="predictions">Predictions</TabsTrigger>
-              <TabsTrigger value="analysis">Analysis</TabsTrigger>
-              <TabsTrigger value="detailed">Detailed Analysis</TabsTrigger>
-            </TabsList>
-            <TabsContent value="predictions">
-              <div className="grid grid-cols-1 gap-4">
-                {sortedPredictions.map((prediction, index) => (
-                  <PredictionItem key={prediction.id} prediction={prediction} index={index} />
+        <div className="lg:border-l lg:pl-10">
+          <p className="t-label m-0">Average, 1 to 3</p>
+          <p className="t-name m-0 mt-2 text-[104px] leading-[0.8] text-pencil sm:text-[128px]">
+            {ratings.length ? fmtScore(average) : '—'}
+          </p>
+          <p className="t-label m-0 mt-4">
+            {ratings.length ? `${bandOf(average)} band · ${plural(ratings.length, 'rating')}` : 'No rated predictions yet'}
+          </p>
+          <RatingStrip className="mt-6" ratings={ratings} mean={ratings.length ? average : null} height={58} dot={6} />
+          <StripAxis className="mt-2" />
+        </div>
+      </header>
+
+      <DataNotice meta={data.meta} />
+
+      <div className="mt-14 grid gap-x-16 gap-y-16 sm:mt-20 lg:grid-cols-[minmax(0,24rem)_minmax(0,1fr)] xl:gap-x-24">
+        {/* By category: sticky beside the record on a wide screen. */}
+        <section aria-labelledby="by-category" className="lg:sticky lg:top-8 lg:self-start">
+          <SectionHead id="by-category" title="By category" />
+          <ul className="m-0 list-none p-0">
+            {CATEGORIES.map(({ value, label }) => {
+              const these = ratedIn(sipp, value).map((p) => p.accuracyRating);
+              const score = these.length ? sipp.categoryAccuracy[categoryKey(value)] : null;
+              const mark = value === strongestCategory ? 'Highest' : value === weakestCategory ? 'Lowest' : null;
+              return (
+                <li key={value} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-4 border-b py-4">
+                  <h3 className="t-label m-0 text-foreground">
+                    {label}
+                    {mark && <span className="ml-2 text-pencil">· {mark}</span>}
+                  </h3>
+                  <p className="m-0 text-right">
+                    <span className="t-figure text-[20px] leading-none text-pencil">{score === null ? '—' : fmtScore(score)}</span>
+                    <span className="t-label ml-2">{these.length} rated</span>
+                  </p>
+                  <RatingStrip
+                    className="col-span-2 mt-2"
+                    ratings={these}
+                    mean={score}
+                    height={34}
+                    dot={5}
+                    label={`${label}: ${describeRatings(these, score)}`}
+                  />
+                </li>
+              );
+            })}
+          </ul>
+          <StripAxis className="mt-2" short />
+        </section>
+
+        <div className="min-w-0">
+          <section aria-labelledby="record">
+            <SectionHead id="record" title="Record" meta={`${rated.length} rated · newest first`} />
+            {rated.length ? (
+              <ol className="m-0 list-none p-0">
+                {rated.map((p) => (
+                  <RatedPrediction key={p.id} prediction={p} />
                 ))}
-              </div>
-            </TabsContent>
-            <TabsContent value="analysis">
-              <Card>
-                <CardContent className="pt-6">
-                  <ResponsiveContainer width="100%" height={300}>
-                    <BarChart 
-                      data={categoryChartData}
-                      margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="category" />
-                      <YAxis domain={[0, 3]} />
-                      <Tooltip />
-                      <Bar dataKey="value" fill="#8884d8" />
-                    </BarChart>
-                  </ResponsiveContainer>
-                  <p className="mt-4 whitespace-pre-line">{sipp.patternAnalysis}</p>
-                </CardContent>
-              </Card>
-            </TabsContent>
-            <TabsContent value="detailed">
-              <PredictionAnalysisPanel sipp={sipp} />
-            </TabsContent>
-          </Tabs>
-        )}
-      </motion.main>
-    </div>
+              </ol>
+            ) : (
+              <p className="py-6 text-ink-soft">No prediction has been rated yet.</p>
+            )}
+          </section>
+
+          <section aria-labelledby="pending" className="mt-16 sm:mt-20">
+            <SectionHead id="pending" title="Pending" meta={`${open.length} not yet rated`} />
+            {open.length ? (
+              <ol className="m-0 list-none p-0">
+                {open.map((p) => (
+                  <OpenPrediction key={p.id} prediction={p} />
+                ))}
+              </ol>
+            ) : (
+              <p className="py-6 text-ink-soft">Nothing is waiting on an outcome.</p>
+            )}
+          </section>
+
+          <section aria-labelledby="patterns" className="mt-16 sm:mt-20">
+            <SectionHead id="patterns" title="Patterns" meta="Across the rated predictions" />
+            {patterns.length ? (
+              <ul className="m-0 list-none p-0">
+                {patterns.map((p) => (
+                  <li key={p.type} className="grid grid-cols-[minmax(0,1fr)_auto] items-baseline gap-x-6 gap-y-1 border-b py-4">
+                    <h3 className="t-name m-0 text-[24px]">{p.type}</h3>
+                    <p className="t-figure m-0 text-right text-[15px]">
+                      {Math.round(p.frequency * 100)}%<span className="t-label ml-2">of rated</span>
+                    </p>
+                    <p className="col-span-2 m-0 text-[16px] text-ink-soft">{p.description}</p>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="py-6 text-ink-soft">Too few rated predictions to see a pattern.</p>
+            )}
+
+            {analysis.length > 0 && (
+              <details className="group mt-6">
+                <summary className="t-label cursor-pointer list-none text-foreground hover:text-pencil [&::-webkit-details-marker]:hidden">
+                  <span aria-hidden="true" className="mr-2 inline-block transition-transform group-open:rotate-90">
+                    ▸
+                  </span>
+                  The written analysis
+                </summary>
+                <div className="mt-4 max-w-[38em]">
+                  <p className="t-label m-0">
+                    {synthetic
+                      ? 'Part of the demo data, like the ratings it describes.'
+                      : 'Written by a model from the ratings above. No person has checked it.'}
+                  </p>
+                  {analysis.map((para, i) => (
+                    <p key={i} className="m-0 mt-4 text-[17px] text-ink-soft">
+                      {para.trim()}
+                    </p>
+                  ))}
+                </div>
+              </details>
+            )}
+          </section>
+        </div>
+      </div>
+    </PageShell>
   );
 };
 
