@@ -1,42 +1,20 @@
-
 import React from 'react';
-import { Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import NavBar from '@/components/NavBar';
+import { useLocation } from 'react-router-dom';
+import PageShell from '@/components/PageShell';
 
 const NotFound: React.FC = () => {
+  const { pathname } = useLocation();
+
   return (
-    <div className="min-h-screen bg-background">
-      <NavBar />
-      
-      <main className="container mx-auto px-4 py-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="max-w-2xl mx-auto text-center space-y-6"
-        >
-          <div className="text-8xl font-bold text-primary/50">404</div>
-          
-          <h1 className="text-4xl font-bold tracking-tight">Page Not Found</h1>
-          
-          <p className="text-xl text-muted-foreground">
-            The page you're looking for doesn't exist or has been moved.
-          </p>
-          
-          <div className="pt-6">
-            <Button asChild size="lg">
-              <Link to="/" className="flex items-center gap-2">
-                <ArrowLeft className="h-5 w-5" />
-                Back to Dashboard
-              </Link>
-            </Button>
-          </div>
-        </motion.div>
-      </main>
-    </div>
+    <PageShell title="Not found">
+      <div className="py-20 sm:py-28">
+        <p className="t-label m-0">404</p>
+        <h1 className="t-name m-0 mt-4 text-[56px] sm:text-[92px]">No such page</h1>
+        <p className="m-0 mt-5 max-w-[34em] text-[19px] text-ink-soft sm:text-[21px]">
+          Nothing is filed under <span className="t-figure break-all text-[0.85em] text-foreground">{pathname}</span>.
+        </p>
+      </div>
+    </PageShell>
   );
 };
 
