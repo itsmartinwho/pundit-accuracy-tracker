@@ -1,90 +1,259 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
- 
+
+/* ── Tokens ──────────────────────────────────────────────────────────────
+   Newsprint paper, blue-black ink, and one accent: the editor's blue pencil.
+   The pencil marks what the page wants read first (an average, the current
+   page, focus); everything else is ink at a lower step. Colours are HSL
+   triplets so the shadcn primitives pick them up through hsl(var(--…)).
+   Contrast on paper: ink 16:1, ink-soft 8.6:1, muted 5.1:1, pencil 6.7:1,
+   input rule 3.4:1. */
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 42 35.7% 94.5%; /* paper #F6F3EC */
+    --foreground: 240 9.8% 10%; /* ink #17171C */
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
- 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
- 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
- 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
- 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
- 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
- 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --card: 48 38.5% 97.5%; /* #FBFAF6 */
+    --card-foreground: 240 9.8% 10%;
+    --popover: 48 38.5% 97.5%;
+    --popover-foreground: 240 9.8% 10%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
- 
-    --radius: 0.5rem;
+    --primary: 240 9.8% 10%;
+    --primary-foreground: 42 35.7% 94.5%;
+    --secondary: 42.9 26.9% 89.8%; /* #ECE8DE */
+    --secondary-foreground: 240 9.8% 10%;
+    --muted: 42.9 26.9% 89.8%;
+    --muted-foreground: 43.6 5.5% 39.4%; /* #6A675F */
+    --accent: 226.7 47.4% 92.5%; /* pencil tint #E3E7F5 */
+    --accent-foreground: 229.4 64.8% 47.8%;
+    --destructive: 8 64% 38%;
+    --destructive-foreground: 42 35.7% 94.5%;
 
-    /* Custom category colors */
-    --category-economy: 134 61% 41%;
-    --category-politics: 240 100% 58%;
-    --category-technology: 262 83% 58%;
-    --category-foreign-policy: 15 97% 54%;
-    --category-social-trends: 50 100% 50%;
+    --border: 42.4 18.3% 81.8%; /* hairline #D9D4C8 */
+    --input: 40 4.7% 50.2%; /* #86827A */
+    --ring: 229.4 64.8% 47.8%;
+    --radius: 2px;
 
-    /* Accuracy level colors */
-    --accuracy-low: 0 85% 61%; 
-    --accuracy-medium: 38 95% 58%;
-    --accuracy-high: 142 71% 45%;
+    --ink-soft: 250 4.2% 28.2%; /* #46454B */
+    --pencil: 229.4 64.8% 47.8%; /* #2B47C9 */
+    --pencil-tint: 226.7 47.4% 92.5%;
 
-    font-family: 'Montserrat', 'Arial', sans-serif;
+    /* One distance from the screen's edge to the first thing on it. */
+    --gutter: clamp(16px, 4vw, 40px);
+    --ease: cubic-bezier(0.165, 0.84, 0.44, 1);
   }
- 
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
- 
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
- 
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
- 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
- 
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
- 
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
- 
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
- 
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
- 
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-  }
-}
- 
-@layer base {
+
   * {
     @apply border-border;
   }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-text;
+    font-size: 17px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  ::selection {
+    background: hsl(var(--pencil-tint));
+  }
+
+  a {
+    text-underline-offset: 3px;
+    text-decoration-thickness: 1px;
+  }
+
+  :focus-visible {
+    outline: 2px solid hsl(var(--ring));
+    outline-offset: 3px;
+    border-radius: 1px;
+  }
+}
+
+/* ── Type registers ──────────────────────────────────────────────────────
+   Names     Instrument Serif: the wordmark, page titles, people, section titles.
+   Sentences Newsreader: predictions, outcomes, anything read as prose.
+   Labels    IBM Plex Mono in small tracked capitals: nav, labels, dates,
+             categories, and every figure, set tabular.
+   One weight each. Hierarchy is size, tracking and colour, never bold. */
+@layer components {
+  .t-name {
+    @apply font-name font-normal;
+    letter-spacing: -0.01em;
+    line-height: 1;
+  }
+
+  .t-label {
+    @apply font-label text-muted-foreground;
+    font-size: 11px;
+    line-height: 1.45;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .t-figure {
+    @apply font-label;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0;
+  }
+
+  .shell {
+    width: 100%;
+    max-width: 1320px;
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+
+  .skip-link {
+    @apply t-label bg-foreground text-background;
+    position: absolute;
+    left: var(--gutter);
+    top: -40px;
+    padding: 8px 12px;
+    z-index: 50;
+  }
+  .skip-link:focus {
+    top: 8px;
+  }
+
+  /* The current nav item is underlined in pencil. */
+  .nav-link {
+    @apply t-label;
+    text-decoration: none;
+    padding-block: 6px;
+    background-image: linear-gradient(hsl(var(--pencil)), hsl(var(--pencil)));
+    background-size: 0 1.5px;
+    background-repeat: no-repeat;
+    background-position: 0 100%;
+    transition: background-size 0.35s var(--ease), color 0.2s;
+  }
+  .nav-link:hover {
+    @apply text-foreground;
+  }
+  .nav-link[aria-current="page"] {
+    @apply text-foreground;
+    background-size: 100% 1.5px;
+  }
+
+  /* "Illustrative": the at-a-glance flag on every page. A hatched swatch (the
+     same hatch as the demo-data note) and the word, in pencil. */
+  .flag {
+    @apply t-label inline-flex items-center gap-2 whitespace-nowrap text-pencil;
+    font-size: 10.5px;
+    padding: 3px 8px 3px 4px;
+    border: 1px solid hsl(var(--pencil) / 0.55);
+    border-radius: 2px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+  }
+  .flag:hover {
+    background: hsl(var(--pencil-tint));
+  }
+  .flag::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    flex: none;
+    background: repeating-linear-gradient(-45deg, hsl(var(--pencil)) 0 1px, transparent 1px 3.5px);
+  }
+
+  .hatch {
+    background: repeating-linear-gradient(-45deg, hsl(var(--pencil) / 0.7) 0 1px, transparent 1px 5px);
+  }
+
+  .link-quiet {
+    @apply underline decoration-border hover:decoration-foreground;
+    text-decoration-thickness: 1px;
+    transition: text-decoration-color 0.2s;
+  }
+
+  /* Rows arrive with a short rise; none under reduced motion. */
+  .rise {
+    animation: rise 0.7s var(--ease) both;
+  }
+
+  /* The ratings strip: one dot per rated prediction, stacked in 0.1 bins on a
+     1-to-3 scale, and the average as a pencil rule. */
+  .strip {
+    position: relative;
+    margin-inline: 4px;
+  }
+  .strip-base {
+    position: absolute;
+    left: -4px;
+    right: -4px;
+    bottom: 0;
+    border-top: 1px solid hsl(var(--border));
+  }
+  .strip-guide {
+    position: absolute;
+    top: 6px;
+    bottom: 0;
+    border-left: 1px dotted hsl(var(--input) / 0.55);
+  }
+  .strip-dot {
+    position: absolute;
+    width: var(--d, 5px);
+    height: var(--d, 5px);
+    margin-left: calc(var(--d, 5px) / -2);
+    border-radius: 50%;
+    background: hsl(var(--foreground));
+  }
+  .strip-mean {
+    position: absolute;
+    top: 0;
+    bottom: -3px;
+    width: 2px;
+    margin-left: -1px;
+    background: hsl(var(--pencil));
+  }
+  .strip .strip-dot {
+    animation: fade 0.6s var(--ease) both;
+  }
+  .strip .strip-mean {
+    animation: grow 0.7s var(--ease) 0.15s both;
+    transform-origin: bottom;
+  }
+
+  /* Hide visually, keep for screen readers. */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    @apply sr-only;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes grow {
+  from {
+    transform: scaleY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise,
+  .strip .strip-dot,
+  .strip .strip-mean,
+  .nav-link {
+    animation: none !important;
+    transition: none !important;
   }
 }
