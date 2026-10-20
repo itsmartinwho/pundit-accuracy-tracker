@@ -18,9 +18,9 @@ import OpenAI from 'openai';
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const DEFAULT_OUT = path.join(ROOT, 'public/data/sippData.json');
 
-// Current as of OpenAI's docs on 2026-10-20: a model that supports the Responses
-// API and its web_search tool. Override with OPENAI_MODEL, e.g. gpt-6-luna to spend less.
-const MODEL = process.env.OPENAI_MODEL || 'gpt-6.1-sol';
+// OpenAI's most capable model as of its models page on 2026-10-20; it supports the
+// Responses API and its web_search tool. Override with OPENAI_MODEL, e.g. gpt-6-luna to spend less.
+const MODEL = process.env.OPENAI_MODEL || 'gpt-6-astra';
 const SINCE = '2023-01-01';
 const MIN_VERIFIED = 3;
 const CATEGORIES = ['economy', 'politics', 'technology', 'foreign-policy', 'social-trends'];

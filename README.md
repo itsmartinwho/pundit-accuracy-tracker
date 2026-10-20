@@ -47,7 +47,7 @@ npm run refresh-data -- --dry-run
 npm run refresh-data
 ```
 
-For each of the ten, one request asks a model with web search for up to 15 predictions made since 2023, with a source link for each and a rating for those that have played out. A second request describes the patterns in the ratings, from the data alone. The default model is `gpt-6.1-sol`; set `OPENAI_MODEL` to change it. Expect about twenty requests, and OpenAI bills web search per call.
+For each of the ten, one request asks a model with web search for up to 15 predictions made since 2023, with a source link for each and a rating for those that have played out. A second request describes the patterns in the ratings, from the data alone. The default model is `gpt-6-astra`, OpenAI's most capable; set `OPENAI_MODEL` to change it. Expect about twenty requests, and OpenAI bills web search per call.
 
 The script follows a few rules:
 
