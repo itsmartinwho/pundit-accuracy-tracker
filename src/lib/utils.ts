@@ -14,7 +14,3 @@ export const formatDate = (input: Date | string) => {
   }).format(date)
 }
 
-// Fallback portrait (initials) for when a photo fails to load
-export function getFallbackImageUrl(name: string, size: number = 200): string {
-  return `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&size=${size}&background=random&color=fff&bold=true`;
-}

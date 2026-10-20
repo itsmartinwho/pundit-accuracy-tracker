@@ -1,94 +1,82 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Prediction, formatNumber, getAccuracyColor, getCategoryColor, formatDate } from '@/data/sippData';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import type { Prediction } from '@/data/sippData';
+import { RatingMark } from './RatingStrip';
+import { categoryLabel, fmtDate, fmtHorizon, fmtRating, isWebLink } from '@/lib/record';
 
-// Links come from model output in refreshed data, so only plain web links are rendered.
-const isWebLink = (url?: string): url is string => !!url && /^https?:\/\//i.test(url);
+// A prediction in the record: when it was said and under what, the words, what
+// happened, and its rating on the 1-to-3 rule. A pending one has its horizon instead.
 
-interface PredictionItemProps {
-  prediction: Prediction;
-  index: number;
-}
+const ROW =
+  'grid grid-cols-[minmax(0,1fr)_auto] gap-x-6 gap-y-2 border-b py-5 md:grid-cols-[8.5rem_minmax(0,1fr)_auto] md:py-6';
 
-const PredictionItem: React.FC<PredictionItemProps> = ({ prediction, index }) => {
+const Stamp: React.FC<{ prediction: Prediction }> = ({ prediction }) => (
+  <p className="t-label m-0 md:pt-[5px]">
+    <time dateTime={prediction.dateStated}>{fmtDate(prediction.dateStated)}</time>
+    <span className="md:hidden"> · </span>
+    <span className="md:mt-1 md:block">{categoryLabel(prediction.category)}</span>
+  </p>
+);
+
+const Words: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <p className="m-0 text-[19px] leading-snug text-foreground sm:text-[20px]">{children}</p>
+);
+
+export const RatedPrediction: React.FC<{ prediction: Prediction & { accuracyRating: number } }> = ({ prediction }) => {
+  const links = [
+    isWebLink(prediction.source) && { href: prediction.source, label: 'Source' },
+    isWebLink(prediction.outcomeSource) && { href: prediction.outcomeSource, label: 'Outcome source' },
+  ].filter(Boolean) as { href: string; label: string }[];
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.03 }}
-    >
-      <Card className="overflow-hidden border-l-4 hover:shadow-md transition-all duration-300"
-            style={{ borderLeftColor: `hsl(var(--${getCategoryColor(prediction.category)}))` }}>
-        <CardContent className="p-4">
-          <div className="flex flex-col space-y-3">
-            <div className="flex justify-between items-start">
-              <div>
-                <Badge variant="outline" 
-                       style={{ backgroundColor: `hsl(var(--${getCategoryColor(prediction.category)}))/0.1`, 
-                                color: `hsl(var(--${getCategoryColor(prediction.category)}))` }}>
-                  {prediction.category.replace('-', ' ')}
-                </Badge>
-                <span className="text-xs text-muted-foreground ml-2">
-                  {formatDate(prediction.dateStated)}
-                </span>
-              </div>
-              
-              {prediction.accuracyRating ? (
-                <div className="flex flex-col items-end">
-                  <Badge style={{ backgroundColor: `hsl(var(--${getAccuracyColor(prediction.accuracyRating)}))` }}>
-                    {formatNumber(prediction.accuracyRating)}/3
-                  </Badge>
-                  {prediction.normalizedScore && (
-                    <span className="text-xs text-muted-foreground mt-1">
-                      Normalized: {formatNumber(prediction.normalizedScore)}
-                    </span>
-                  )}
-                </div>
-              ) : (
-                <Badge variant="outline" className="bg-muted/50">
-                  {prediction.verificationStatus}
-                </Badge>
-              )}
-            </div>
-            
-            <p className="font-medium my-2">{prediction.predictedOutcome}</p>
-            
-            {prediction.actualOutcome && (
-              <div className="mt-3 text-sm">
-                <span className="font-medium">Actual outcome: </span>
-                <span className="text-muted-foreground">{prediction.actualOutcome}</span>
-              </div>
-            )}
-            
-            {(isWebLink(prediction.source) || isWebLink(prediction.outcomeSource)) && (
-              <div className="flex gap-4 text-xs">
-                {isWebLink(prediction.source) && (
-                  <a href={prediction.source} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 text-muted-foreground hover:text-foreground">
-                    Source
-                  </a>
-                )}
-                {isWebLink(prediction.outcomeSource) && (
-                  <a href={prediction.outcomeSource} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 text-muted-foreground hover:text-foreground">
-                    Outcome source
-                  </a>
-                )}
-              </div>
-            )}
-
-            {prediction.analysisExplanation && (
-              <div className="mt-2 text-sm border-t pt-2">
-                <span className="font-medium text-xs text-orange-600">Analysis: </span>
-                <span className="text-muted-foreground">{prediction.analysisExplanation}</span>
-              </div>
-            )}
-          </div>
-        </CardContent>
-      </Card>
-    </motion.div>
+    <li className={ROW}>
+      <Stamp prediction={prediction} />
+      <p className="col-start-2 row-start-1 m-0 flex items-center justify-end gap-2 self-start md:col-start-3 md:pt-[5px]">
+        <RatingMark rating={prediction.accuracyRating} />
+        <span className="t-figure min-w-[3ch] text-right text-[17px] leading-none text-foreground">
+          {fmtRating(prediction.accuracyRating)}
+        </span>
+        <span className="sr-only"> out of 3</span>
+      </p>
+      <div className="col-span-2 min-w-0 md:col-span-1 md:col-start-2 md:row-start-1">
+        <Words>{prediction.predictedOutcome}</Words>
+        {prediction.actualOutcome && (
+          <p className="m-0 mt-2 text-[16px] leading-normal text-ink-soft">{prediction.actualOutcome}</p>
+        )}
+        {prediction.analysisExplanation && (
+          <p className="m-0 mt-2 text-[15px] italic leading-normal text-muted-foreground">
+            {prediction.analysisExplanation}
+          </p>
+        )}
+        {links.length > 0 && (
+          <p className="t-label m-0 mt-3 flex flex-wrap gap-x-5">
+            {links.map((l) => (
+              <a key={l.label} href={l.href} target="_blank" rel="noopener noreferrer" className="link-quiet hover:text-foreground">
+                {l.label}
+                <span aria-hidden="true"> ↗</span>
+              </a>
+            ))}
+          </p>
+        )}
+      </div>
+    </li>
   );
 };
 
-export default PredictionItem;
+export const OpenPrediction: React.FC<{ prediction: Prediction }> = ({ prediction }) => (
+  <li className={ROW}>
+    <Stamp prediction={prediction} />
+    <p className="t-label col-start-2 row-start-1 m-0 text-right md:col-start-3 md:pt-[5px]">
+      {prediction.verificationStatus === 'unverified' ? 'Unverified' : fmtHorizon(prediction.timeframe) || 'Pending'}
+    </p>
+    <div className="col-span-2 min-w-0 md:col-span-1 md:col-start-2 md:row-start-1">
+      <Words>{prediction.predictedOutcome}</Words>
+      {isWebLink(prediction.source) && (
+        <p className="t-label m-0 mt-3">
+          <a href={prediction.source} target="_blank" rel="noopener noreferrer" className="link-quiet hover:text-foreground">
+            Source<span aria-hidden="true"> ↗</span>
+          </a>
+        </p>
+      )}
+    </div>
+  </li>
+);
