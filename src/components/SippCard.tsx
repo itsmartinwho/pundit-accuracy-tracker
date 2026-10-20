@@ -68,9 +68,6 @@ const getTopCategories = (sipp: SIPP, selectedCategory: PredictionCategory | 'al
 };
 
 const SippCard: React.FC<SippCardProps> = ({ sipp, index, selectedCategory = 'all' }) => {
-  // Add console log for debugging
-  console.log(`[DEBUG] Rendering SippCard for ${sipp.name} with score: ${sipp.averageAccuracy.toFixed(1)}`);
-  
   // Determine which accuracy to display based on category selection
   let displayedAccuracy = sipp.averageAccuracy;
   
@@ -81,7 +78,6 @@ const SippCard: React.FC<SippCardProps> = ({ sipp, index, selectedCategory = 'al
     
     if (typeof categoryScore === 'number' && !isNaN(categoryScore)) {
       displayedAccuracy = categoryScore;
-      console.log(`[DEBUG] Using category score for ${sipp.name}: ${selectedCategory} = ${displayedAccuracy.toFixed(1)}`);
     }
   }
   

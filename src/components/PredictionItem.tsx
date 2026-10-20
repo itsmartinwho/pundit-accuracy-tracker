@@ -5,6 +5,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
+// Links come from model output in refreshed data, so only plain web links are rendered.
+const isWebLink = (url?: string): url is string => !!url && /^https?:\/\//i.test(url);
+
 interface PredictionItemProps {
   prediction: Prediction;
   index: number;
@@ -60,6 +63,21 @@ const PredictionItem: React.FC<PredictionItemProps> = ({ prediction, index }) =>
               </div>
             )}
             
+            {(isWebLink(prediction.source) || isWebLink(prediction.outcomeSource)) && (
+              <div className="flex gap-4 text-xs">
+                {isWebLink(prediction.source) && (
+                  <a href={prediction.source} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 text-muted-foreground hover:text-foreground">
+                    Source
+                  </a>
+                )}
+                {isWebLink(prediction.outcomeSource) && (
+                  <a href={prediction.outcomeSource} target="_blank" rel="noopener noreferrer" className="underline underline-offset-2 text-muted-foreground hover:text-foreground">
+                    Outcome source
+                  </a>
+                )}
+              </div>
+            )}
+
             {prediction.analysisExplanation && (
               <div className="mt-2 text-sm border-t pt-2">
                 <span className="font-medium text-xs text-orange-600">Analysis: </span>

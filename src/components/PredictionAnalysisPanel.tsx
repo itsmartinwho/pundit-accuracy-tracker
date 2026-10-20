@@ -48,7 +48,8 @@ const PredictionAnalysisPanel: React.FC<PredictionAnalysisPanelProps> = ({ sipp 
     analyzeData();
   }, [sipp]);
 
-  // Function to generate enhanced patterns analysis using OpenAI
+  // Writes the "Detailed Patterns Analysis" text. This is a fixed template filled in
+  // from the numbers; no model is called and nothing leaves the browser.
   const generatePatternsAnalysis = async (predictions: Prediction[]) => {
     try {
       if (predictions.length < 3) {
@@ -56,29 +57,6 @@ const PredictionAnalysisPanel: React.FC<PredictionAnalysisPanelProps> = ({ sipp 
         return;
       }
 
-      const analysisPrompt = `
-Analyze the following predictions by ${sipp.name} to identify patterns, biases, and tendencies:
-
-${predictions.slice(0, 10).map(p => `
-- Category: ${p.category}
-- Prediction: "${p.predictedOutcome}"
-- Accuracy rating: ${p.accuracyRating}/3
-- Actual outcome: "${p.actualOutcome || 'Unknown'}"
-`).join('\n')}
-
-Provide a detailed analysis of:
-1. Clear patterns in their prediction accuracy across topics
-2. Cognitive biases that might be affecting their predictions
-3. Areas where they tend to make errors vs. areas of strength
-4. Overall tendency toward optimism or pessimism in predictions
-5. Any political or ideological biases that might influence predictions
-
-Format your analysis in paragraphs that are easy to read. Be specific and analytical.
-`;
-
-      // In a real application, we would make an API call to OpenAI here
-      // For now, generate a more detailed placeholder analysis based on the data
-      
       // Calculate average accuracy
       const avgAccuracy = predictions.reduce((sum, p) => sum + (p.accuracyRating || 0), 0) / predictions.length;
       
